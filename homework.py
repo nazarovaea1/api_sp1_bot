@@ -9,6 +9,12 @@ import logging
 
 from dotenv import load_dotenv
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    filename='main.log', 
+    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s'
+)
+
 load_dotenv()
 
 
@@ -46,11 +52,11 @@ def send_message(message, bot_client):
 def main():
     # проинициализировать бота здесь
     now_date = datetime.now()
-    five_minutes_before = now_date - timedelta(days = 10)
-    five_minutes_before_tmstmp = five_minutes_before.timestamp()
+    ten_days_before = now_date - timedelta(days = 10)
+    ten_days_before_tmstmp = ten_days_before.timestamp()
     bot_client = Bot(token=TELEGRAM_TOKEN)
     #current_timestamp = int(time.time()) # начальное значение timestamp
-    current_timestamp = int(five_minutes_before_tmstmp)
+    current_timestamp = int(ten_days_before_tmstmp)
     logging.debug('Бот запущен')
 
     while True:
@@ -69,9 +75,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename='main.log', 
-    format='%(asctime)s, %(levelname)s, %(name)s, %(message)s'
-)
