@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 logging.basicConfig(
     level=logging.DEBUG,
-    filename='main.log', 
+    filename='main.log',
     format='%(asctime)s, %(levelname)s, %(name)s, %(message)s'
 )
 
@@ -31,16 +31,17 @@ def parse_homework_status(homework):
     if homework_status == 'rejected':
         verdict = 'К сожалению в работе нашлись ошибки.'
     else:
-        verdict = 'Ревьюеру всё понравилось, можно приступать к следующему уроку.'
+        verdict = ('Ревьюеру всё понравилось, можно приступать к следующему '
+                   'уроку.')
     return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
 
 def get_homework_statuses(current_timestamp):
-    
     from_date = current_timestamp
-    homework_statuses = requests.get('https://praktikum.yandex.ru/api/user_api/homework_statuses/',
-                        headers={'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'},
-                        params={'from_date': from_date,})
+    homework_statuses = requests.get(
+        'https://praktikum.yandex.ru/api/user_api/homework_statuses/',
+        headers={'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'},
+        params={'from_date': from_date, })
     return homework_statuses.json()
 
 
@@ -50,12 +51,10 @@ def send_message(message, bot_client):
 
 
 def main():
-    # проинициализировать бота здесь
     now_date = datetime.now()
-    ten_days_before = now_date - timedelta(days = 10)
+    ten_days_before = now_date - timedelta(days=10)
     ten_days_before_tmstmp = ten_days_before.timestamp()
     bot_client = Bot(token=TELEGRAM_TOKEN)
-    #current_timestamp = int(time.time()) # начальное значение timestamp
     current_timestamp = int(ten_days_before_tmstmp)
     logging.debug('Бот запущен')
 
@@ -63,9 +62,11 @@ def main():
         try:
             new_homework = get_homework_statuses(current_timestamp)
             if new_homework.get('homeworks'):
-                send_message(parse_homework_status(new_homework.get('homeworks')[0]), bot_client)
-            current_timestamp = new_homework.get('current_date', current_timestamp)  # обновить timestamp
-            time.sleep(300)  # опрашивать раз в пять минут
+                send_message(parse_homework_status(
+                    new_homework.get('homeworks')[0]), bot_client)
+            current_timestamp = new_homework.get(
+                'current_date', current_timestamp)
+            time.sleep(300)
 
         except Exception as e:
             print(f'Бот столкнулся с ошибкой: {e}')
