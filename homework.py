@@ -63,8 +63,9 @@ def main():
             current_timestamp = int(time.time())
             new_homework = get_homework_statuses(current_timestamp)
             if new_homework.get('homeworks'):
-                if (len(new_homework.get('homeworks')[0]) > 0 and
-                    new_homework.get('homeworks')[0] is not None):
+                if (len(new_homework.get(
+                    'homeworks')[0]) > 0 and new_homework.get(
+                        'homeworks')[0] is not None):
                     send_message(parse_homework_status(
                         new_homework.get('homeworks')[0]), bot_client)
                 else:
