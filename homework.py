@@ -16,31 +16,38 @@ logging.basicConfig(
 load_dotenv()
 
 
-PRAKTIKUM_TOKEN = os.getenv("PRAKTIKUM_TOKEN")
+PRAKTIKUM_TOKEN = os.getenv('PRAKTIKUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
-from_date = time.time()
 
 
 def parse_homework_status(homework):
-    homework_name = homework['homework_name']
-    homework_status = homework['status']
-    print(homework_name)
-    if homework_status == 'rejected':
-        verdict = 'К сожалению в работе нашлись ошибки.'
-    else:
-        verdict = ('Ревьюеру всё понравилось, можно приступать к следующему '
-                   'уроку.')
+    homework_name = homework.get('homework_name')
+    homework_status = homework.get('status')
+    homework_statuses = {
+        'approved': ('Ревьюеру всё понравилось, можно приступать к следующему '
+                     'уроку.'),
+        'rejected': 'К сожалению в работе нашлись ошибки.',
+    }
+
+    if homework_status not in homework_statuses:
+        return 'Статус неизвестен'
+    verdict = homework_statuses[homework_status]
     return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
 
 
 def get_homework_statuses(current_timestamp):
-    from_date = current_timestamp
+    prak_homework_api = ('https://praktikum.yandex.ru/api/user_api/'
+                         'homework_statuses/')
     homework_statuses = requests.get(
-        'https://praktikum.yandex.ru/api/user_api/homework_statuses/',
+        prak_homework_api,
         headers={'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'},
-        params={'from_date': from_date, })
+        params={'from_date': current_timestamp, })
     return homework_statuses.json()
+    try:
+        homework_statuses.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        raise SystemExit(err)
 
 
 def send_message(message, bot_client):
@@ -49,25 +56,25 @@ def send_message(message, bot_client):
 
 
 def main():
-    now_date = datetime.now()
-    ten_days_before = now_date - timedelta(days=10)
-    ten_days_before_tmstmp = ten_days_before.timestamp()
     bot_client = Bot(token=TELEGRAM_TOKEN)
-    current_timestamp = int(ten_days_before_tmstmp)
     logging.debug('Бот запущен')
 
     while True:
         try:
+            current_timestamp = int(time.time())
             new_homework = get_homework_statuses(current_timestamp)
             if new_homework.get('homeworks'):
-                send_message(parse_homework_status(
-                    new_homework.get('homeworks')[0]), bot_client)
+                if (len(new_homework.get('homeworks')[0]) > 0 and
+                    new_homework.get('homeworks')[0] is not None):
+                    send_message(parse_homework_status(
+                        new_homework.get('homeworks')[0]), bot_client)
+                else:
+                    send_message('Домашек для проверки нет', bot_client)
             current_timestamp = new_homework.get(
                 'current_date', current_timestamp)
             time.sleep(300)
 
         except Exception as e:
-            print(f'Бот столкнулся с ошибкой: {e}')
             time.sleep(5)
             logging.error(f'Бот столкнулся с ошибкой: {e}')
 
